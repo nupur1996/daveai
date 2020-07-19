@@ -1,9 +1,10 @@
 import './App.css';
 import 'antd/dist/antd.css';
 
-import {Button, Card, Col, Pagination, Rate, Row} from 'antd'
-import { Radio, Tabs } from 'antd';
+import {Button, Card, Col, Pagination, Radio, Rate, Row, Select, Tabs} from 'antd'
 import React, { Component } from 'react';
+
+const {Option} = Select;
 
 const { TabPane } = Tabs;
 
@@ -45,6 +46,7 @@ export default class App extends Component {
       .then(data => this.setState({ items:data,reviews: data.reviews}));
     }
   }
+  
 
   handleChange=(value)=>{
     this.setState({
@@ -52,14 +54,31 @@ export default class App extends Component {
       maxValue: value * numEachPage
     });
   }
-  sortedRatings =()=>{
 
-   this.state.reviews.sort((a,b)=>{
-      return a.ratings.Overall - b.ratings.Overall
-    })
-    console.log(this.state.reviews)
+  handleProdSelect=(val)=>{
+    this.setState({product:val})
+  }
+  handleViewSelect=(val)=>{
+    this.setState({viewer:val})
   }
   
+  sortedRatings(event, sortKey){
+    const reviews = this.state.reviews;   
+    reviews && reviews.sort((a,b) => b.ratings[sortKey] - a.ratings[sortKey])
+    this.setState({reviews})
+  }
+
+  sortedUsefulness(event, sortKey){
+    const reviews = this.state.reviews;   
+    reviews && reviews.sort((a,b) => a[sortKey] - b[sortKey])
+    this.setState({reviews})
+  }
+  
+  sortedConnection(event, sortKey){
+    const reviews = this.state.reviews;   
+    reviews && reviews.sort((a,b) => a.reviewer[sortKey] - b.reviewer[sortKey])
+    this.setState({reviews})
+  }
   render(){
       const ids =[]
       
@@ -73,26 +92,33 @@ export default class App extends Component {
       arrayIds()
     return (
 
-          <div className="App" style={{textAlign:"left",padding:"10px"}} >
-          
+      <div className="App" style={{textAlign:"left",padding:"10px"}} >
+          <div style={{width:"100%",padding:"20px"}}>
+            Product Id<br/><Select defaultValue="select an product Id" style={{ width: 190,marginTop:"5px" }} onSelect={this.handleProdSelect}>
+                {ids.map((id,key)=>(
+                  <Option value={id}>{id}</Option>
+                ))}
+          </Select>
+        </div>
           <Card className="cardMain" bordered={false} title={<div style={{width:"100%",display:"flex",justifyContent:"space-between"}}>
             <div>Product no. {this.state.items.product_id}</div>
-            <div>{ids.slice(0,10).map((id,key)=>(
-              <Button style={{marginLeft:"5px"}} className="prods" type="primary" shape="circle" key={key}  onClick={()=>this.setState({viewer:id})}>
-                <p>{id}</p>
-              </Button>
-            ))}</div>
+            <div>
+              <Select defaultValue="select a viewer Id" style={{ width: 190,marginTop:"5px" }} onSelect={this.handleViewSelect}>
+                {ids.slice(0,10).map((id,key)=>(
+                  <Option value={id}>{id}</Option>
+                ))}
+          </Select>
+           </div>
             </div>}>
             <div style={{width:"100%",display:"flex",justifyContent:"flex-end"}}>
-
-                <Button type="primary" onClick={this.sortedRatings}> sort by overall rating</Button> &nbsp;
-                <Button type="primary">sort by usefulness</Button>
-
+                <Button type="primary" onClick={e => this.sortedRatings(e,'Overall')}> sort by overall rating</Button> &nbsp;
+                <Button type="primary" onClick={e => this.sortedUsefulness(e,'usefulness')}>sort by usefulness</Button> &nbsp;
+                <Button type="primary" onClick={e => this.sortedConnection(e,'connection_level')}>sort by connection level</Button>
             </div>
           <div style={{display:"flex",flexDirection:"row",justifyContent:"space-between",padding:"20px"}}>
-              {this.state.reviews && this.state.reviews.slice(this.state.minValue, this.state.maxValue).map((review,key)=>(
+              {this.state.reviews.slice(this.state.minValue, this.state.maxValue).map((review,key)=>(
                 <Card key={key} bordered={false} className="cardInner" style={{marginBottom:"10px",marginRight:"10px"}}>
-                    <b>Reviewer's Name</b> - {review.reviewer.name}<br/>
+                {review.friend===true && <p><b>Reviewr's Name -</b> {review.reviewer.name}</p>}
                     <b>Comment</b> - {review.comment}<br/>
                     <b>Usefullness</b> - {review.usefulness}<br/>
                     <b>Rating(overall)</b> - <Rate style={{color:"black",fontSize:"0.8rem"}} allowHalf disabled value={review.ratings.Overall} /><br/>
@@ -113,13 +139,7 @@ export default class App extends Component {
             <Pagination onChange={this.handleChange} defaultPageSize={numEachPage} defaultCurrent={1} total={this.state.items.reviews && this.state.items.reviews.length}/>
           </div>
         </Card>
-        <div style={{width:"100%",display:"flex",justifyContent:"space-between",padding:"20px"}}>
-              {ids.map((id,key)=>(
-                <Button className="prods" type="primary" shape="circle" key={key}  onClick={()=>this.setState({product:id})}>
-                  <p>{id}</p>
-                </Button>
-              ))}
-          </div>
+       
           </div>
     )
   }
